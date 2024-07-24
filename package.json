@@ -1,0 +1,58 @@
+{
+  "name": "discord-bot",
+  "version": "1.0.0",
+  "description": "Discord bot template",
+  "main": "dist/index.js",
+  "repository": "https://github.com/Lioness100/sapphire-template",
+  "author": "Lioness100 <lioness.fiverr@gmail.com>",
+  "type": "module",
+  "private": true,
+  "imports": {
+    "#structures/*": "./dist/lib/structures/*.js",
+    "#utils/*": "./dist/lib/utils/*.js",
+    "#root/*": "./dist/*.js"
+  },
+  "scripts": {
+    "pm2": "pm2 start ecosystem.yml",
+    "start": "node --enable-source-maps .",
+    "lint": "eslint .",
+    "format": "prettier --write \"{*,src/**/*}.{json,js,ts,css,html}\"",
+    "build": "tsup --config node_modules/@lioness100/configs/tsup.config.js --define.PROJECT_TYPE bot",
+    "watch": "tsup --config node_modules/@lioness100/configs/tsup.config.js --define.PROJECT_TYPE bot --clean=false --watch"
+  },
+  "dependencies": {
+    "@sapphire/decorators": "^6.1.0",
+    "@sapphire/framework": "^5.2.1",
+    "@sapphire/plugin-hmr": "^3.0.1",
+    "colorette": "^2.0.20",
+    "discord.js": "^14.15.3",
+    "dotenv": "^16.4.5",
+    "envalid": "^8.0.0",
+    "lowdb": "^7.0.1",
+    "tslog": "^4.9.3"
+  },
+  "optionalDependencies": {
+    "bufferutil": "^4.0.8",
+    "utf-8-validate": "^6.0.4",
+    "zlib-sync": "^0.1.9"
+  },
+  "devDependencies": {
+    "@lioness100/configs": "1.0.31",
+    "@types/node": "^20.14.9",
+    "eslint": "^8.57.0",
+    "pm2": "^5.4.1",
+    "prettier": "^3.3.2",
+    "tsup": "^8.1.0",
+    "typescript": "^5.5.2"
+  },
+  "engines": {
+    "node": ">=16.11"
+  },
+  "prettier": "@lioness100/configs/prettier",
+  "eslintConfig": {
+    "extends": [
+      "./node_modules/@lioness100/configs/.eslintrc.json"
+    ]
+  },
+  "packageManager": "yarn@4.1.1"
+}

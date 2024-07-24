@@ -1,0 +1,15 @@
+{
+  "extends": "@lioness100/configs/tsconfig",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "baseUrl": "src",
+    "paths": {
+      "#structures/*": ["lib/structures/*"],
+      "#utils/*": ["lib/utils/*"],
+      "#types/*": ["lib/types/*"],
+      "#root/*": ["*"]
+    }
+  },
+  "include": ["src"]
+}
