@@ -26,6 +26,8 @@ export class StartDraftCommand extends Command {
 	];
 
 	public override async chatInputRun(interaction: Command.ChatInputCommandInteraction<'cached'>) {
+		await interaction.deferReply();
+
 		this.teams = await getTeams();
 		this.currentTeamIndex = 0;
 		this.currentRound = 1;
@@ -108,11 +110,10 @@ export class StartDraftCommand extends Command {
 					embeds: [embed],
 					components: [row]
 				})
-			: interaction.reply({
+			: interaction.editReply({
 					content: role.name,
 					embeds: [embed],
-					components: [row],
-					fetchReply: true
+					components: [row]
 				}));
 
 		try {
