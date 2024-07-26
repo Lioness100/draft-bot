@@ -2,7 +2,8 @@
 import { none, type Option, some } from '@sapphire/framework';
 
 export const enum CustomId {
-	Arbitrary = '**'
+	Arbitrary = '**',
+	SelectUser = 'select-user-menu'
 }
 
 // `Resolver`s will be used with different data types to serialize parameters into the string. This setup assumes the
