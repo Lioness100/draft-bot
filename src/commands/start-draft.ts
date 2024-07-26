@@ -84,7 +84,7 @@ export class StartDraftCommand extends Command {
 			this.currentRound++;
 			this.teams.reverse();
 
-			if (this.currentRound > 0) {
+			if (this.currentRound > 13) {
 				const embed = createEmbed('Draft completed!').setTitle('OHL Draft');
 
 				await lastMessage?.reply({ embeds: [embed] });
