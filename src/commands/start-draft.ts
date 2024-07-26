@@ -148,6 +148,7 @@ export class StartDraftCommand extends Command {
 
 		const timeManager = config.get('Time Manager User ID');
 		const collector = message.createMessageComponentCollector<ComponentType.UserSelect | ComponentType.Button>({
+			time: 1000 * 60 * 2,
 			filter: async (i) => {
 				if (i.isButton()) {
 					if (i.user.id !== timeManager) {
