@@ -104,10 +104,12 @@ export class StartDraftCommand extends Command {
 
 		const message = await (lastMessage
 			? lastMessage.reply({
+					content: `<@&${role.id}>`,
 					embeds: [embed],
 					components: [row]
 				})
 			: interaction.reply({
+					content: `<@&${role.id}>`,
 					embeds: [embed],
 					components: [row],
 					fetchReply: true
