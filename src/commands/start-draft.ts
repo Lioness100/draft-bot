@@ -14,7 +14,7 @@ import {
 	UserSelectMenuBuilder
 } from 'discord.js';
 import { createEmbed, sendError, sendSuccess } from '#utils/responses';
-import { getTeams, removePlayerFromDraft, roster } from '#utils/sheets';
+import { getConfig, getTeams, removePlayerFromDraft, roster } from '#utils/sheets';
 import { CustomId } from '#utils/customIds';
 
 export class StartDraftCommand extends Command {
@@ -122,21 +122,24 @@ export class StartDraftCommand extends Command {
 			role.color
 		).setTitle(`OHL Draft - Round ${this.currentRound}`);
 
-		const message = await (lastMessage
-			? lastMessage.reply({
-					content: `<@&${role.id}>`,
-					embeds: [embed],
-					components: [row, row2]
-				})
-			: interaction.editReply({
-					content: `<@&${role.id}>`,
-					embeds: [embed],
-					components: [row, row2]
-				}));
+		const [config, message] = await Promise.all([
+			getConfig(),
+			lastMessage
+				? lastMessage.reply({
+						content: `<@&${role.id}>`,
+						embeds: [embed],
+						components: [row, row2]
+					})
+				: interaction.editReply({
+						content: `<@&${role.id}>`,
+						embeds: [embed],
+						components: [row, row2]
+					})
+		]);
 
 		let deadline = Date.now() + 1000 * 60 * 2;
 
-		const timeManager = this.teams.map((team) => team.get('Time Manager User ID')).find(Boolean)!;
+		const timeManager = config.get('Time Manager User ID');
 		const collector = message.createMessageComponentCollector<ComponentType.UserSelect | ComponentType.Button>({
 			filter: async (i) => {
 				if (i.isButton()) {
@@ -147,11 +150,7 @@ export class StartDraftCommand extends Command {
 
 					return true;
 				} else if (i.isUserSelectMenu()) {
-					if (
-						i.user.id !== team.get('AGM User ID') &&
-						i.user.id !== team.get('GM User ID') &&
-						i.user.id !== '1074877275440414801'
-					) {
+					if (i.user.id !== team.get('AGM User ID') && i.user.id !== team.get('GM User ID')) {
 						await sendError(i, 'Only the GM or AGM can make a selection');
 						return false;
 					}
@@ -163,7 +162,7 @@ export class StartDraftCommand extends Command {
 					}
 
 					const member = await interaction.guild.members.fetch(i.values[0]);
-					const role = this.teams.map((team) => team.get('Draft Role ID')).find(Boolean)!;
+					const role = config.get('Draft Role ID');
 					if (!member.roles.cache.has(role)) {
 						await sendError(i, 'This user is not a player');
 						return false;
@@ -185,7 +184,7 @@ export class StartDraftCommand extends Command {
 						`<@&${role.id}>, you're up! Your deadline to make a selection is ${time(new Date(deadline), TimestampStyles.RelativeTime)}`
 					);
 
-					await sendSuccess(i, 'Time added!');
+					await sendSuccess(i, 'Added 30 seconds.', { emoji: '⏳' });
 					await message.edit({ embeds: [embed] });
 				} else if (i.isUserSelectMenu()) {
 					const selectedUserId = i.values[0];

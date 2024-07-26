@@ -28,6 +28,11 @@ export const getTeams = async () => {
 	}>();
 };
 
+export const getConfig = async () => {
+	const rows = await config.getRows();
+	return rows.find((row) => row.get('Time Manager User ID'))!;
+};
+
 const availableDoc = new GoogleSpreadsheet('1B0TqSzX5tIQswVgMt_dVrKkH4PurFpeC9lmWUw220D4', jwt);
 await availableDoc.loadInfo();
 
