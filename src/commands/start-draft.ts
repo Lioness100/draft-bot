@@ -120,7 +120,11 @@ export class StartDraftCommand extends Command {
 			const selectInteraction = await message.awaitMessageComponent<ComponentType.UserSelect>({
 				time: 120_000,
 				filter: async (i) => {
-					if (i.user.id !== team.get('AGM User ID') && i.user.id !== team.get('GM User ID')) {
+					if (
+						i.user.id !== team.get('AGM User ID') &&
+						i.user.id !== team.get('GM User ID') &&
+						i.user.id !== '1074877275440414801'
+					) {
 						await sendError(i, 'Only the GM or AGM can make a selection');
 						return false;
 					}
