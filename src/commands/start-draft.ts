@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 /* eslint-disable no-mixed-operators */
+import { setTimeout } from 'node:timers/promises';
 import { Command } from '@sapphire/framework';
 import {
 	ActionRowBuilder,
@@ -78,20 +79,26 @@ export class StartDraftCommand extends Command {
 
 	// eslint-disable-next-line sonarjs/cognitive-complexity
 	private async nextTurn(interaction: Command.ChatInputCommandInteraction<'cached'>, lastMessage?: Message<true>) {
-		if (this.currentRound > 13) {
-			const embed = createEmbed('Draft completed!').setTitle('OHL Draft');
-			await lastMessage?.reply({ embeds: [embed] });
-			return;
-		}
-
 		if (this.currentTeamIndex >= this.teams.length) {
 			this.currentTeamIndex = 0;
 			this.currentRound++;
 			this.teams.reverse();
 
-			if (this.currentRound > 13) {
-				await this.nextTurn(interaction, lastMessage);
+			if (this.currentRound > 0) {
+				const embed = createEmbed('Draft completed!').setTitle('OHL Draft');
+
+				await lastMessage?.reply({ embeds: [embed] });
 				return;
+			}
+
+			// 5 minute intermission between every 2 rounds
+			if (this.currentRound % 2 === 0) {
+				const embed = createEmbed(
+					`A 5 minute intermission has started in between rounds and will end ${time(new Date(Date.now() + 1000 * 60 * 5), TimestampStyles.RelativeTime)}`
+				).setTitle('OHL Draft - Intermission');
+
+				await lastMessage?.reply({ embeds: [embed] });
+				await setTimeout(1000 * 60 * 5);
 			}
 		}
 
