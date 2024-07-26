@@ -1,7 +1,10 @@
+/* eslint-disable @typescript-eslint/no-misused-promises */
 /* eslint-disable no-mixed-operators */
 import { Command } from '@sapphire/framework';
 import {
 	ActionRowBuilder,
+	ButtonBuilder,
+	ButtonStyle,
 	type ComponentType,
 	type GuildMember,
 	type Message,
@@ -10,8 +13,8 @@ import {
 	TimestampStyles,
 	UserSelectMenuBuilder
 } from 'discord.js';
-import { createEmbed, sendError } from '#utils/responses';
-import { getTeams, roster } from '#utils/sheets';
+import { createEmbed, sendError, sendSuccess } from '#utils/responses';
+import { getTeams, removePlayerFromDraft, roster } from '#utils/sheets';
 import { CustomId } from '#utils/customIds';
 
 export class StartDraftCommand extends Command {
@@ -51,7 +54,7 @@ export class StartDraftCommand extends Command {
 			this.teams.map(async (team) => {
 				const picks = this.draftPicks.filter((pick) => pick.team === team.get('Team Name'));
 				const content = picks
-					.map((pick, idx) => `${idx + 1}. ${pick.member.displayName} - $${pick.salary}`)
+					.map((pick, idx) => `${idx + 1}. <@${pick.member.id}> - $${pick.salary}`)
 					.join('\n');
 
 				const channelName = (team.get('Team Name') as string).toLowerCase().replaceAll(' ', '-');
@@ -73,6 +76,7 @@ export class StartDraftCommand extends Command {
 		await this.nextTurn(interaction);
 	}
 
+	// eslint-disable-next-line sonarjs/cognitive-complexity
 	private async nextTurn(interaction: Command.ChatInputCommandInteraction<'cached'>, lastMessage?: Message<true>) {
 		if (this.currentRound > 13) {
 			const embed = createEmbed('Draft completed!').setTitle('OHL Draft');
@@ -97,6 +101,20 @@ export class StartDraftCommand extends Command {
 			.setPlaceholder('Select a player');
 
 		const row = new ActionRowBuilder<UserSelectMenuBuilder>().addComponents(userSelectMenu);
+
+		const add30SecondsButton = new ButtonBuilder()
+			.setCustomId(CustomId.Add30Seconds)
+			.setLabel('+30s')
+			.setEmoji('⏳')
+			.setStyle(ButtonStyle.Secondary);
+
+		const viewDraftSheetButton = new ButtonBuilder()
+			.setLabel('View Draft Sheet')
+			.setEmoji('📄')
+			.setURL('https://docs.google.com/spreadsheets/d/1B0TqSzX5tIQswVgMt_dVrKkH4PurFpeC9lmWUw220D4')
+			.setStyle(ButtonStyle.Link);
+
+		const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(add30SecondsButton, viewDraftSheetButton);
 		const role = interaction.guild.roles.cache.find(({ name }) => name === team.get('Team Name'))!;
 
 		const embed = createEmbed(
@@ -106,20 +124,29 @@ export class StartDraftCommand extends Command {
 
 		const message = await (lastMessage
 			? lastMessage.reply({
-					content: role.name,
+					content: `<@&${role.id}>`,
 					embeds: [embed],
-					components: [row]
+					components: [row, row2]
 				})
 			: interaction.editReply({
-					content: role.name,
+					content: `<@&${role.id}>`,
 					embeds: [embed],
-					components: [row]
+					components: [row, row2]
 				}));
 
-		try {
-			const selectInteraction = await message.awaitMessageComponent<ComponentType.UserSelect>({
-				time: 120_000,
-				filter: async (i) => {
+		let deadline = Date.now() + 1000 * 60 * 2;
+
+		const timeManager = this.teams.map((team) => team.get('Time Manager User ID')).find(Boolean)!;
+		const collector = message.createMessageComponentCollector<ComponentType.UserSelect | ComponentType.Button>({
+			filter: async (i) => {
+				if (i.isButton()) {
+					if (i.user.id !== timeManager) {
+						await sendError(i, `Only <@${timeManager}> can add time`);
+						return false;
+					}
+
+					return true;
+				} else if (i.isUserSelectMenu()) {
 					if (
 						i.user.id !== team.get('AGM User ID') &&
 						i.user.id !== team.get('GM User ID') &&
@@ -144,54 +171,76 @@ export class StartDraftCommand extends Command {
 
 					return true;
 				}
-			});
 
-			const selectedUserId = selectInteraction.values[0];
-			const selectedUser = await interaction.guild.members.fetch(selectedUserId);
-
-			embed.setDescription(`<@&${role.id}> selected **${selectedUser.displayName}**!`);
-
-			await selectInteraction.update({
-				embeds: [embed],
-				components: []
-			});
-
-			this.draftPicks.push({
-				team: team.get('Team Name'),
-				member: selectedUser,
-				round: this.currentRound,
-				salary: this.salaries[this.currentRound - 1]
-			});
-
-			const picks = this.draftPicks.filter((pick) => pick.team === team.get('Team Name'));
-			const teamColumn = roster.headerValues.indexOf(team.get('Team Name'));
-
-			for (const [idx, pick] of picks.entries()) {
-				roster.getCell(idx + 1, teamColumn).value = pick.member.displayName;
+				return false;
 			}
+		});
 
-			await roster.saveUpdatedCells();
+		collector
+			.on('collect', async (i) => {
+				if (i.isButton()) {
+					deadline += 30 * 1000;
+					collector.resetTimer({ time: deadline - Date.now() });
+					embed.setDescription(
+						`<@&${role.id}>, you're up! Your deadline to make a selection is ${time(new Date(deadline), TimestampStyles.RelativeTime)}`
+					);
 
-			const channelName = (team.get('Team Name') as string).toLowerCase().replaceAll(' ', '-');
-			const channel = interaction.guild.channels.cache.find(({ name }) => name === channelName) as TextChannel;
-			const rosterMessageId = this.messages.find((msg) => msg.team === team.get('Team Name'))!;
-			const rosterMessage = await channel.messages.fetch(rosterMessageId.id);
-			const content = picks
-				.map((pick, idx) => `${idx + 1}. ${pick.member.displayName} - $${pick.salary}`)
-				.join('\n');
+					await sendSuccess(i, 'Time added!');
+					await message.edit({ embeds: [embed] });
+				} else if (i.isUserSelectMenu()) {
+					const selectedUserId = i.values[0];
+					const selectedUser = await interaction.guild.members.fetch(selectedUserId);
 
-			await rosterMessage.edit(content);
-		} catch (error: any) {
-			if (error.code !== 'InteractionCollectorError') {
-				console.error(error);
-			}
+					embed.setDescription(`<@&${role.id}> selected **${selectedUser.displayName}**!`);
 
-			embed.setDescription(`Time's up! No selection was made by <@&${role.id}>.`);
-			await message.edit({ embeds: [embed], components: [] });
-		} finally {
-			this.currentTeamIndex++;
-			await this.nextTurn(interaction, message);
-		}
+					await i.update({
+						embeds: [embed],
+						components: []
+					});
+
+					collector.stop('pick made');
+
+					this.draftPicks.push({
+						team: team.get('Team Name'),
+						member: selectedUser,
+						round: this.currentRound,
+						salary: this.salaries[this.currentRound - 1]
+					});
+
+					const picks = this.draftPicks.filter((pick) => pick.team === team.get('Team Name'));
+					const teamColumn = roster.headerValues.indexOf(team.get('Team Name'));
+
+					for (const [idx, pick] of picks.entries()) {
+						roster.getCell(idx + 1, teamColumn).value = pick.member.displayName;
+					}
+
+					await roster.saveUpdatedCells();
+					await removePlayerFromDraft(selectedUser.user.username);
+					await selectedUser.roles.add(role);
+
+					const channelName = (team.get('Team Name') as string).toLowerCase().replaceAll(' ', '-');
+					const channel = interaction.guild.channels.cache.find(
+						({ name }) => name === channelName
+					) as TextChannel;
+					const rosterMessageId = this.messages.find((msg) => msg.team === team.get('Team Name'))!;
+					const rosterMessage = await channel.messages.fetch(rosterMessageId.id);
+					const content = picks
+						.map((pick, idx) => `${idx + 1}. <@${pick.member.id}> - $${pick.salary}`)
+						.join('\n');
+
+					await rosterMessage.edit(content);
+				}
+			})
+			.on('end', async (_, reason) => {
+				if (reason === 'time') {
+					embed.setDescription(`Time's up! No selection was made by <@&${role.id}>.`);
+					await message.edit({ embeds: [embed], components: [] });
+				}
+
+				this.currentTeamIndex++;
+				await this.nextTurn(interaction, message);
+			})
+			.on('error', console.error);
 	}
 
 	public override registerApplicationCommands(registry: Command.Registry) {

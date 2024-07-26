@@ -2,6 +2,7 @@
 import { none, type Option, some } from '@sapphire/framework';
 
 export const enum CustomId {
+	Add30Seconds = 'add-30-seconds',
 	Arbitrary = '**',
 	SelectUser = 'select-user-menu'
 }
