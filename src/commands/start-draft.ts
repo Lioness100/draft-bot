@@ -49,7 +49,7 @@ export class StartDraftCommand extends Command {
 			this.teams.map(async (team) => {
 				const picks = this.draftPicks.filter((pick) => pick.team === team.get('Team Name'));
 				const content = picks
-					.map((pick, idx) => `${idx + 1}. <@${pick.member.id}> - $${pick.salary}`)
+					.map((pick, idx) => `${idx + 1}. ${pick.member.displayName} - $${pick.salary}`)
 					.join('\n');
 
 				const channelName = (team.get('Team Name') as string).toLowerCase().replaceAll(' ', '-');
@@ -104,12 +104,12 @@ export class StartDraftCommand extends Command {
 
 		const message = await (lastMessage
 			? lastMessage.reply({
-					content: `<@&${role.id}>`,
+					content: role.name,
 					embeds: [embed],
 					components: [row]
 				})
 			: interaction.reply({
-					content: `<@&${role.id}>`,
+					content: role.name,
 					embeds: [embed],
 					components: [row],
 					fetchReply: true
@@ -171,7 +171,9 @@ export class StartDraftCommand extends Command {
 			const channel = interaction.guild.channels.cache.find(({ name }) => name === channelName) as TextChannel;
 			const rosterMessageId = this.messages.find((msg) => msg.team === team.get('Team Name'))!;
 			const rosterMessage = await channel.messages.fetch(rosterMessageId.id);
-			const content = picks.map((pick, idx) => `${idx + 1}. <@${pick.member.id}> - $${pick.salary}`).join('\n');
+			const content = picks
+				.map((pick, idx) => `${idx + 1}. ${pick.member.displayName} - $${pick.salary}`)
+				.join('\n');
 
 			await rosterMessage.edit(content);
 		} catch (error: any) {
