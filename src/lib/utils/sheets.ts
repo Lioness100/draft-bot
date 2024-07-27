@@ -40,11 +40,15 @@ await availableDoc.loadInfo();
 
 export const available = availableDoc.sheetsByIndex[0];
 
-export const removePlayerFromDraft = async (player: string, alertChannel: TextChannel) => {
+export const removePlayerFromDraft = async (player: string, alertChannel: TextChannel, nickname?: string) => {
 	const rows = await available.getRows<{ Discord: string }>();
-	const row = rows.find(
-		(row) => (row.get('Discord') as string).replace(/#\d{4}$/, '').toLowerCase() === player.toLowerCase()
-	);
+	const playerLowerCase = player.toLowerCase();
+	const nicknameLowerCase = nickname?.toLowerCase();
+
+	const row = rows.find((row) => {
+		const discord = (row.get('Discord') as string).replace(/#\d{4}$/, '').toLowerCase();
+		return discord === playerLowerCase || discord === nicknameLowerCase;
+	});
 
 	if (!row) {
 		await alertChannel?.send(`${player} could not be found in the draft sheet.`).catch(console.error);
