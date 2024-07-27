@@ -1,5 +1,6 @@
 import { JWT } from 'google-auth-library';
 import { GoogleSpreadsheet } from 'google-spreadsheet';
+import type { TextChannel } from 'discord.js';
 import creds from '../../../config/fiverr-spreadsheet-service-ab827ac1d527.json';
 import { env } from '#root/config';
 
@@ -20,6 +21,7 @@ export const roster = doc.sheetsByIndex[0];
 export const getTeams = async () => {
 	return config.getRows<{
 		'AGM User ID': string;
+		'Alert Channel ID': string;
 		'Draft Role ID': string;
 		'GM User ID': string;
 		'Protected User ID': string;
@@ -38,14 +40,14 @@ await availableDoc.loadInfo();
 
 export const available = availableDoc.sheetsByIndex[0];
 
-export const removePlayerFromDraft = async (player: string) => {
+export const removePlayerFromDraft = async (player: string, alertChannel: TextChannel) => {
 	const rows = await available.getRows<{ Discord: string }>();
 	const row = rows.find(
 		(row) => (row.get('Discord') as string).replace(/#\d{4}$/, '').toLowerCase() === player.toLowerCase()
 	);
 
 	if (!row) {
-		console.log('Player not found', { player });
+		await alertChannel?.send(`${player} could not be found in the draft sheet.`).catch(console.error);
 		return;
 	}
 

@@ -92,9 +92,9 @@ export class StartDraftCommand extends Command {
 			}
 
 			// 5 minute intermission between every 2 rounds
-			if (this.currentRound % 2 === 0) {
+			if (this.currentRound % 2 !== 0) {
 				const embed = createEmbed(
-					`A 5 minute intermission has started in between rounds and will end ${time(new Date(Date.now() + 1000 * 60 * 5), TimestampStyles.RelativeTime)}`
+					`A 5 minute intermission has started in-between rounds and will end ${time(new Date(Date.now() + 1000 * 60 * 5), TimestampStyles.RelativeTime)}.`
 				).setTitle('OHL Draft - Intermission');
 
 				await lastMessage?.reply({ embeds: [embed] });
@@ -226,7 +226,12 @@ export class StartDraftCommand extends Command {
 					}
 
 					await roster.saveUpdatedCells();
-					await removePlayerFromDraft(selectedUser.user.username);
+
+					const alertChannel = interaction.guild.channels.cache.get(
+						config.get('Alert Channel ID')
+					) as TextChannel;
+
+					await removePlayerFromDraft(selectedUser.user.username, alertChannel);
 					await selectedUser.roles.add(role);
 
 					const channelName = (team.get('Team Name') as string).toLowerCase().replaceAll(' ', '-');
