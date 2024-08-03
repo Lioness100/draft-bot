@@ -3,7 +3,9 @@ import { none, type Option, some } from '@sapphire/framework';
 
 export const enum CustomId {
 	Add30Seconds = 'add-30-seconds',
+	Approve = 'approve',
 	Arbitrary = '**',
+	Reject = 'reject',
 	SelectUser = 'select-user-menu'
 }
 
@@ -17,16 +19,17 @@ interface Resolver {
 	parse: (param: string, ...other: any) => any;
 }
 
-const optional = <T extends ResolverKey>(resolver: T): `${T}?` => {
+export const optional = <T extends ResolverKey>(resolver: T): `${T}?` => {
 	return `${resolver}?` as const;
 };
 
 const ParamType = {
-	InteractionId: 'string'
+	UserId: 'string'
 } satisfies Record<string, ResolverKey>;
 
 const customIdParams = {
-	[CustomId.Arbitrary]: [optional(ParamType.InteractionId)] as const
+	[CustomId.Approve]: [ParamType.UserId, ParamType.UserId, 'boolean', 'boolean'] as const,
+	[CustomId.Reject]: [ParamType.UserId, ParamType.UserId] as const
 } as const satisfies Partial<Record<CustomId, readonly ResolverKey[]>>;
 
 const baseResolvers = {

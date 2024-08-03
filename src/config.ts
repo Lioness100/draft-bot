@@ -14,7 +14,7 @@ export const env = cleanEnv(process.env, {
 });
 
 export const clientOptions: ClientOptions = {
-	intents: [GatewayIntentBits.Guilds],
+	intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
 	logger: { instance: new Logger() },
 	loadDefaultErrorListeners: false,
 	hmr: { enabled: env.isDev }

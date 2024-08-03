@@ -22,11 +22,13 @@ export const getTeams = async () => {
 	return config.getRows<{
 		'AGM User ID': string;
 		'Alert Channel ID': string;
+		'Board of Trades Role ID': string;
 		'Draft Role ID': string;
 		'GM User ID': string;
 		'Protected User ID': string;
 		'Team Name': string;
 		'Time Manager User ID': string;
+		'Trade Channel ID': string;
 	}>();
 };
 
