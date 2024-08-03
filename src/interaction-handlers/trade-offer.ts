@@ -1,7 +1,15 @@
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
 import { ApplyOptions } from '@sapphire/decorators';
 import { InteractionHandlerTypes, InteractionHandler } from '@sapphire/framework';
-import { EmbedBuilder, type TextChannel, type ButtonInteraction } from 'discord.js';
+import {
+	EmbedBuilder,
+	type TextChannel,
+	type ButtonInteraction,
+	ActionRowBuilder,
+	type ButtonBuilder,
+	type ButtonComponent,
+	type ActionRow
+} from 'discord.js';
 import { createCustomId, CustomId, parseCustomId } from '#utils/customIds';
 import { disableComponents, sendError, sendSuccess } from '#utils/responses';
 import { getConfig, getTeams, roster } from '#utils/sheets';
@@ -100,19 +108,16 @@ export class TradeOfferInteractionHandler extends InteractionHandler {
 
 		await sendSuccess(interaction, 'Trade approved');
 
-		// @ts-expect-error because
 		// eslint-disable-next-line require-atomic-updates
-		interaction.message.components[0].components[0].customId = createCustomId(CustomId.Approve, [
-			user,
-			user2,
-			gm2,
-			board
-		]);
+		const row = ActionRowBuilder.from<ButtonBuilder>(
+			interaction.message.components[0] as ActionRow<ButtonComponent>
+		);
+
+		row.components[0].setCustomId(createCustomId(CustomId.Approve, user, user2, gm2 ?? false, board ?? false));
 
 		await interaction.message.edit({
 			embeds: [embed],
-			components:
-				gm2 && board ? disableComponents(interaction.message.components) : interaction.message.components
+			components: gm2 && board ? disableComponents(interaction.message.components) : [row]
 		});
 
 		if (gm2 && board) {
