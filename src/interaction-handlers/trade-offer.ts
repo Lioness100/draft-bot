@@ -2,7 +2,7 @@
 import { ApplyOptions } from '@sapphire/decorators';
 import { InteractionHandlerTypes, InteractionHandler } from '@sapphire/framework';
 import { EmbedBuilder, type TextChannel, type ButtonInteraction } from 'discord.js';
-import { CustomId, parseCustomId } from '#utils/customIds';
+import { createCustomId, CustomId, parseCustomId } from '#utils/customIds';
 import { disableComponents, sendError, sendSuccess } from '#utils/responses';
 import { getConfig, getTeams, roster } from '#utils/sheets';
 
@@ -93,15 +93,26 @@ export class TradeOfferInteractionHandler extends InteractionHandler {
 		}
 
 		const embed = EmbedBuilder.from(interaction.message.embeds[0]).setDescription(
-			`**${member.displayName}** for **${member2.displayName}**\n\n🟢 Approved by <@${owner}> (<@&${teamRole.id}>)\n${gm2 ? `🟢 Approved by ` : `🟡 Awaiting approval from `} <@${owner2}> (<@&${teamRole2.id})\n${
+			`**${member.displayName}** for **${member2.displayName}**\n\n🟢 Approved by <@${owner}> (<@&${teamRole.id}>)\n${gm2 ? `🟢 Approved by ` : `🟡 Awaiting approval from `} <@${owner2}> (<@&${teamRole2.id}>)\n${
 				board ? `🟢 Approved by` : `🟡 Awaiting approval from `
 			} <@&${tradeRole.id}>`
 		);
 
 		await sendSuccess(interaction, 'Trade approved');
+
+		// @ts-expect-error because
+		// eslint-disable-next-line require-atomic-updates
+		interaction.message.components[0].components[0].customId = createCustomId(CustomId.Approve, [
+			user,
+			user2,
+			gm2,
+			board
+		]);
+
 		await interaction.message.edit({
 			embeds: [embed],
-			components: gm2 && board ? disableComponents(interaction.message.components) : undefined
+			components:
+				gm2 && board ? disableComponents(interaction.message.components) : interaction.message.components
 		});
 
 		if (gm2 && board) {
