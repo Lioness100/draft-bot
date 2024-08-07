@@ -49,7 +49,7 @@ export class SyncCommand extends Command {
 				const content = players
 					.map(
 						(pick, idx) =>
-							`${idx + 1}. ${ids.has(pick) ? `<@${ids.get(pick)}>` : pick} - $${this.salaries[Math.max(0, idx - 2)]}`
+							`${idx + 1}. ${ids.has(pick) ? `<@${ids.get(pick)}>` : pick} - $${this.salaries[Math.max(0, idx - 2)] ?? this.salaries.at(-1)}`
 					)
 					.join('\n');
 
