@@ -12,15 +12,16 @@ export class SyncCommand extends Command {
 	public override async chatInputRun(interaction: Command.ChatInputCommandInteraction<'cached'>) {
 		const [rows] = await Promise.all([
 			roster.getRows(),
-			interaction.deferReply(),
+			interaction.deferReply({ ephemeral: true }),
 			roster.loadHeaderRow(),
 			interaction.guild.members.fetch()
 		]);
 
 		await Promise.all(
 			roster.headerValues.map(async (team) => {
-				const players = rows.map((row) => row.get(team)).filter(Boolean) as (string & { id: string })[];
+				const players = rows.map((row) => row.get(team)).filter(Boolean) as string[];
 				const teamRole = interaction.guild.roles.cache.find((role) => role.name === team)!;
+				const ids = new Map<string, string>();
 
 				await Promise.all([
 					...teamRole.members.map(async (member) => {
@@ -36,8 +37,7 @@ export class SyncCommand extends Command {
 						);
 
 						if (member?.first()) {
-							// eslint-disable-next-line require-atomic-updates
-							player.id = member.first()!.id;
+							ids.set(player, member.first()!.id);
 							await member
 								.first()!
 								.roles.add(teamRole)
@@ -49,7 +49,7 @@ export class SyncCommand extends Command {
 				const content = players
 					.map(
 						(pick, idx) =>
-							`${idx + 1}. ${pick.id ? `<@${pick.id}>` : pick} - $${this.salaries[Math.max(0, idx - 2)]}`
+							`${idx + 1}. ${ids.has(pick) ? `<@${ids.get(pick)}>` : pick} - $${this.salaries[Math.max(0, idx - 2)]}`
 					)
 					.join('\n');
 
