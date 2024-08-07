@@ -26,7 +26,9 @@ export class SyncCommand extends Command {
 					...teamRole.members.map(async (member) => {
 						if (
 							!players.some(
-								(player) => player.name === member.user.username || player.name === member.displayName
+								(player) =>
+									player.name.toLowerCase() === member.user.username.toLowerCase() ||
+									player.name.toLowerCase() === member.displayName.toLowerCase()
 							)
 						) {
 							await member.roles.remove(teamRole).catch(() => null);
@@ -34,7 +36,9 @@ export class SyncCommand extends Command {
 					}),
 					...players.map(async (player) => {
 						const member = interaction.guild.members.cache.filter(
-							({ user, displayName }) => displayName === player.name || user.username === player.name
+							({ user, displayName }) =>
+								displayName.toLowerCase() === player.name.toLowerCase() ||
+								user.username.toLowerCase() === player.name.toLowerCase()
 						);
 
 						if (member?.first()) {
