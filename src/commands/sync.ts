@@ -12,6 +12,8 @@ export class SyncCommand extends Command {
 			interaction.guild.members.fetch()
 		]);
 
+		console.log(roster.headerValues);
+
 		await Promise.all(
 			roster.headerValues.map(async (team) => {
 				const players = rows
