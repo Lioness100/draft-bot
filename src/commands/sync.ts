@@ -12,8 +12,6 @@ export class SyncCommand extends Command {
 			interaction.guild.members.fetch()
 		]);
 
-		console.log(roster.headerValues, rows.length);
-
 		await Promise.all(
 			roster.headerValues.map(async (team) => {
 				const players = rows
@@ -52,7 +50,7 @@ export class SyncCommand extends Command {
 				const content = players
 					.map(
 						(pick, idx) =>
-							`${idx + 1}. ${ids.has(pick.name) ? `<@${ids.get(pick.name)}>` : pick} - $${pick.salary}`
+							`${idx + 1}. ${ids.has(pick.name) ? `<@${ids.get(pick.name)}>` : pick.name} - $${pick.salary}`
 					)
 					.join('\n');
 
