@@ -12,7 +12,7 @@ export class SyncCommand extends Command {
 			interaction.guild.members.fetch()
 		]);
 
-		console.log(roster.headerValues);
+		console.log(roster.headerValues, rows.length);
 
 		await Promise.all(
 			roster.headerValues.map(async (team) => {
